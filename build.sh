@@ -5,9 +5,14 @@ if [ $# -ne 1 ];then
    exit 1
 fi
 
+mkdir -p /build
 cd /build
-ARCHIVE_NAME=`ls Fedora-Cloud-Atomic*.xz`
-BASE_NAME=`echo $ARCHIVE_NAME | sed 's/\.xz$//'`
+ARCHIVE_NAME=`ls Fedora-Cloud-Atomic*.xz 2>/dev/null`
+if [ "$ARCHIVE_NAME" != "" ]; then
+  BASE_NAME=`echo $ARCHIVE_NAME | sed 's/\.xz$//'`
+else
+  BASE_NAME="Fedora-Cloud-Atomic-23-20160127.2.x86_64.raw"
+fi
 
 PROJECT_NAME=$1
 STAMP=`date +"%s"`
@@ -16,7 +21,12 @@ TEMP_DIR=/tmp
 
 set -e
 set -x
-xzcat --decompress $ARCHIVE_NAME > $TEMP_DIR/disk.raw
+if [ -z "$ARCHIVE_NAME" ]; then
+  wget -O - https://download.fedoraproject.org/pub/alt/atomic/stable/Cloud-Images/x86_64/Images/$BASE_NAME.xz | \
+     xzcat --decompress > $TEMP_DIR/disk.raw 
+else
+  xzcat --decompress $ARCHIVE_NAME > $TEMP_DIR/disk.raw
+fi
 cd $TEMP_DIR 
 tar -Szcf $BASE_NAME.tar.gz disk.raw
 rm disk.raw
